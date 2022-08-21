@@ -208,7 +208,6 @@ namespace TestDoc {
 
     export class TestDocContext {
         private container: TestDocContainer;
-        // The context needs 
         private tentativeElements: TestDocElement[] = [];
         private disposed: boolean = false;
 
@@ -234,13 +233,14 @@ namespace TestDoc {
             return newElement;
         }
 
-        section(title: string, 
+        async section(
+            title: string, 
             callbackOrList: ((context: TestDocContext) => Promise<void>) |
                             ((context: TestDocContext) => void) |
-                            TestDocElement[]): TestDocSection |
                             TestDocElement[]
-        {
+        ) : Promise<TestDocSection | TestDocElement[]> {
             let newElement = new TestDocSection(title);
+            this.tentativeElements.push(newElement);
 
             if (callbackOrList instanceof Array) {
                 for (let elem of callbackOrList) {
@@ -251,15 +251,12 @@ namespace TestDoc {
                     newElement.addElement(elem);
                 }
 
-                this.tentativeElements.push(newElement);
                 return newElement;
             }
 
-            let newContext = new TestDocContext(this.container);
-            Promise.resolve(callbackOrList(newContext)).then(() => {
-                newContext.dispose();
-            });
-            this.tentativeElements.push(newElement);
+            let newContext = new TestDocContext(newElement);
+            await Promise.resolve(callbackOrList(newContext));
+            newContext.dispose();
             return newElement;
         }
 
