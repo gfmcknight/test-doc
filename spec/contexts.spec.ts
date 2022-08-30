@@ -1,5 +1,5 @@
  import "jasmine"
- import TestDoc from "../src/index"
+ import TestDoc from "../index"
 
 describe("TestDoc Document", () => {
     it("can render text", () => {
