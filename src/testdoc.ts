@@ -49,7 +49,7 @@ namespace TestDocCore {
         renderText(depth: number, text: TextContentList): void;
         renderImage(depth: number, path: string, label: string): void;
         renderNote(depth: number, text: TextContentList): void;
-        
+
         getContent(): string;
     }
 
@@ -114,8 +114,17 @@ namespace TestDocCore {
 }
 
 namespace TestDoc {
+    type StringLiteral<S> = S extends string ? string extends S ? never : S : never;
+
     interface TestDocElement {
         render(depth: number, renderer: TestDocCore.TestDocRenderer): void;
+    }
+
+    export interface TestDocElementConstructor<
+            ArgumentTypes extends any[],
+            TElement extends TestDocElement>
+    {
+        new(...args: ArgumentTypes): TElement;
     }
 
     interface TestDocContainer extends TestDocElement {
@@ -180,12 +189,56 @@ namespace TestDoc {
         }
     }
 
-    export class TestDocDocument implements TestDocContainer {
-        content: TestDocElement[] = [];
-        private mainContext: TestDocContext = new TestDocContext(this);
+    const startingContextFactory = (base: ContextBase) => ({});
 
-        getContext(): TestDocContext {
-            return this.mainContext;
+    function extendWithElement<
+        Name extends string,
+        TCons extends TestDocElementConstructor<ArgumentTypes, TElement>,
+        ArgumentTypes extends any[],
+        TElement extends TestDocElement,
+        TContext
+    > (name: Name, cons: TCons, contextCons: (base: ContextBase) => TContext):
+        (base: ContextBase) => (WithKey<StringLiteral<Name>, ArgumentTypes, TElement> & TContext) {
+        return (base: ContextBase) => ({
+            [name]: (args: ArgumentTypes) => {
+                const newElement = new cons(...args);
+                base.element(newElement);
+                return newElement;
+            },
+            ...contextCons(base)
+        }) as any;
+    }
+
+    const basic = extendWithElement("text", TestDocText, startingContextFactory);
+
+    export class TestDocDocument<TContext> implements TestDocContainer {
+        content: TestDocElement[] = [];
+        private mainContext: any;
+        private contextFactory: any;
+
+        private constructor() {
+            this.contextFactory = startingContextFactory;
+        }
+
+        static get() {
+            const res = new TestDocDocument<ReturnType<typeof startingContextFactory>>()
+                .useElement("text", TestDocText);
+            res.getContext()
+        }
+
+        useElement<
+            Name extends string,
+            TCons extends TestDocElementConstructor<ArgumentTypes, TElement>,
+            ArgumentTypes extends any[],
+            TElement extends TestDocElement,
+        > (name: Name, cons: TCons) {
+            const newFactory = extendWithElement(name, cons, this.contextFactory as (base: ContextBase) => TContext);
+            this.contextFactory = newFactory;
+            return this as TestDocDocument<ReturnType<typeof newFactory>>;
+        }
+
+        getContext(): TContext {
+            return this.mainContext = this.contextFactory();
         }
 
         addElement(elem: TestDocElement): void {
@@ -206,41 +259,26 @@ namespace TestDoc {
         }
     }
 
-    export class TestDocContext {
-        private container: TestDocContainer;
+    export class ContextBase {
+        private _container: TestDocContainer;
         private tentativeElements: TestDocElement[] = [];
         private disposed: boolean = false;
 
         constructor(container: TestDocContainer) {
-            this.container = container;
+            this._container = container;
         }
 
-        text(text: string): TestDocText {
-            let newElement = new TestDocText(text);
-            this.tentativeElements.push(newElement);
-            return newElement;
+        element(elem: TestDocElement) {
+            this.tentativeElements.push(elem);
+            return elem;
         }
 
-        note(text: string): TestDocNote {
-            let newElement = new TestDocNote(text);
-            this.tentativeElements.push(newElement);
-            return newElement;
-        }
-
-        image(path: string, label: string) {
-            let newElement = new TestDocImage(path, label);
-            this.tentativeElements.push(newElement);
-            return newElement;
-        }
-
-        async section(
-            title: string, 
-            callbackOrList: ((context: TestDocContext) => Promise<void>) |
-                            ((context: TestDocContext) => void) |
-                            TestDocElement[]
-        ) : Promise<TestDocSection | TestDocElement[]> {
-            let newElement = new TestDocSection(title);
-            this.tentativeElements.push(newElement);
+        async container(c: TestDocContainer,
+            callbackOrList: ((context: any) => Promise<void>) |
+                            ((context: any) => void) |
+                            TestDocElement[])
+        {
+            this.tentativeElements.push(c);
 
             if (callbackOrList instanceof Array) {
                 for (let elem of callbackOrList) {
@@ -248,16 +286,16 @@ namespace TestDoc {
                     if (index != -1) {
                         this.tentativeElements.splice(index, 1);
                     }
-                    newElement.addElement(elem);
+                    c.addElement(elem);
                 }
 
-                return newElement;
+                return c;
             }
 
-            let newContext = new TestDocContext(newElement);
+            let newContext = new ContextBase(c);
             await Promise.resolve(callbackOrList(newContext));
             newContext.dispose();
-            return newElement;
+            return c;
         }
 
         dispose() {
@@ -266,10 +304,22 @@ namespace TestDoc {
             }
 
             for (let elem of this.tentativeElements) {
-                this.container.addElement(elem);
+                this._container.addElement(elem);
             }
             this.disposed = true;
         }
+    }
+
+    type WithKey<
+        Name extends string,
+        ArgumentTypes extends any[],
+        TElement extends TestDocElement> =
+    {
+        [key in Name]: (...args: ArgumentTypes) => TElement;
+    };
+
+    function tryStuff() {
+        const thing = basic(new ContextBase(undefined as any));
     }
 }
 
