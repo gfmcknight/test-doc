@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "lib": [ "ES2015", "DOM" ],
+    "target": "ESNext",
+    "module": "CommonJS",
+    "lib": [ "ESNext" ],
     "declaration": true,
     "outDir": "./lib",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+  },
+  "ts-node": {
+    "esm": true
   }
 }

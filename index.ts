@@ -1,3 +1,4 @@
-import TestDoc from "./src/testdoc";
+import { TestDoc } from "./src/testdoc";
+import type { ContextOf } from "./src/testdoc";
 
-export default TestDoc;
+export { TestDoc, ContextOf };
