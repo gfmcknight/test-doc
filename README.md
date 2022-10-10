@@ -3,7 +3,17 @@
 
 TestDoc is a small library for creating documentation and testing at the same time\. It contains the pieces to generate a markdown or HTML file _but_ you have to bring your own assertion engine\.
 > This document is generated in the `test/readme.ts` file\.
-# Basic Usage
+## Table of Contents
+- [TestDoc](#testdoc)
+    - [Table of Contents](#table-of-contents)
+- [Basic usage](#basic-usage)
+- [Text](#text)
+    - [Chaining](#chaining)
+    - [Bold, italics, strikethrough, preformatting](#bold-italics-strikethrough-preformatting)
+    - [Text-like nodes](#text-like-nodes)
+    - [Special character escaping](#special-character-escaping)
+- [Sections and subsection](#sections-and-subsection)
+# Basic usage
 
 Create a new document with the `document` function\. Documents have a `body` method which is the entry point for writing into the document\. Once the documentis generated, the `render` returns the document text as a string\. The `body` method accepts a function and passes in a context object to add elements\.
 
@@ -53,7 +63,7 @@ This results in only one paragraph:
 
 Hello World
 ```
-## Bold, Italics, Strikethrough, Preformatting
+## Bold, italics, strikethrough, preformatting
 
 Text nodes can also be appended in **bold** _italic_ ~~strikethrough~~ and `preformatted`
 ```js
@@ -97,7 +107,7 @@ Will be escaped as such:
 
 Samples: \\ \` \* \_ \{ \} \[ \] \( \) \# \+ \- \. \!
 ```
-# Sections and Subsection
+# Sections and subsection
 
 TestDoc supports sections and subsections as sets of elements following headers\. They are represented either as a list of elements, or as a set of callbacks\.
 

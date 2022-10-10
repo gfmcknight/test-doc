@@ -96,9 +96,11 @@ await ctx.section("Heading C", async ctx => {
                 .text("you have to bring your own assertion engine.");
 
             ctx.note("This document is generated in the").preformatted("test/readme.ts").text("file.");
+
+            await ctx.section("Table of Contents", [ ctx.contents() ]);
         });
 
-        await ctx.section("Basic Usage", async (ctx: ContextOf<typeof doc>) => {
+        await ctx.section("Basic usage", async (ctx: ContextOf<typeof doc>) => {
             ctx.text("Create a new document with the").preformatted("document").text("function.")
                 .text("Documents have a").preformatted("body").text("method which is the entry point for writing into the document.")
                 .text("Once the documentis generated, the").preformatted("render").text("returns the document text as a string.")
@@ -134,7 +136,7 @@ await ctx.section("Heading C", async ctx => {
                 ctx.sample(appendTextResult);
             });
 
-            await ctx.section("Bold, Italics, Strikethrough, Preformatting", async (ctx: ContextOf<typeof doc>) => {
+            await ctx.section("Bold, italics, strikethrough, preformatting", async (ctx: ContextOf<typeof doc>) => {
                 ctx.text("Text nodes can also be appended in")
                     .bold("bold")
                     .italic("italic")
@@ -175,7 +177,7 @@ await ctx.section("Heading C", async ctx => {
             });
         });
 
-        await ctx.section("Sections and Subsection", async (ctx: ContextOf<typeof doc>) => {
+        await ctx.section("Sections and subsection", async (ctx: ContextOf<typeof doc>) => {
             ctx.text("TestDoc supports sections and subsections as sets of elements following headers.")
                 .text("They are represented either as a list of elements, or as a set of callbacks.");
 
@@ -210,4 +212,4 @@ await ctx.section("Heading C", async ctx => {
     });
 
     await fs.writeFile("README.md", TestDoc.render(doc, "md", 4));
-})()
+})();

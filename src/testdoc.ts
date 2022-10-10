@@ -80,7 +80,6 @@ namespace TestDocCore {
         }
 
         getMarkdown(): string {
-
             let value = this.preformatted ? this.text : escapeMarkdown(this.text);
 
             if (this.preformatted) {
@@ -145,7 +144,7 @@ namespace TestDocCore {
     }
 
     export class TestDocRendererImpl implements TestDoc.TestDocRenderer {
-        private _tabs: 0;
+        private _tabs: number = 0;
         private tabSize: number;
         private hasPaddedLine: boolean;
         content: string;
@@ -167,6 +166,10 @@ namespace TestDocCore {
         
         tabOut() {
             this._tabs -= this.tabSize;
+        }
+
+        setTabCount(tabs: number) {
+            this._tabs = this.tabSize * tabs;
         }
 
         padLine() {
@@ -213,7 +216,7 @@ namespace TestDocCore {
         crawl(callback: (depth: number, element: Readonly<TestDoc.TestDocElement>) => void) {
             let elementStack = [ { element: this.root, depth: 0} ];
             while (elementStack.length > 0) {
-                const { element, depth } = elementStack.pop();
+                const { element, depth } = elementStack.shift();
                 if (typeof (element as TestDoc.TestDocContainer).getElements === "function") {
                     elementStack.unshift(...(element as TestDoc.TestDocContainer).getElements().map(element => ({element, depth: depth + 1})));
                 }
@@ -365,6 +368,7 @@ namespace TestDoc {
         get tabs();
         tabIn();
         tabOut();
+        setTabCount(tabs: number);
         renderEmptySpace(amount: number);
         renderLine(content: string);
         renderAppend(content: string);
@@ -519,6 +523,27 @@ namespace TestDoc {
         }
     }
 
+    export class TestDocContents implements TestDocElement {
+        renderAsHTML(depth: number, renderer: TestDocRenderer): void {
+            throw new Error("Method not implemented.");
+        }
+        renderAsMarkdown(depth: number, renderer: TestDocRenderer): void {
+            const originalTabs = renderer.tabs;
+            renderer.crawl((depth, element) => {
+                if (element instanceof TestDocSection) {
+                    renderer.setTabCount(depth - 1);
+                    const sectionID = element.title
+                        .toLowerCase()
+                        .replaceAll(",", "")
+                        .replaceAll(".", "")
+                        .replaceAll(" ", "-");
+                    renderer.renderLine(`- [${element.title}](#${sectionID})`);
+                }
+            });
+            renderer.setTabCount(originalTabs);
+        }
+    }
+
     export class TestDocDocument<TContext> implements TestDocContainer {
         content: TestDocElement[] = [];
         private contextBase: TestDocCore.ContextBase;
@@ -592,6 +617,7 @@ namespace TestDoc {
             .useElement("note", TestDocNote)
             .useElement("image", TestDocImage)
             .useElement("sample", TestDocPreformattedBlock)
+            .useElement("contents", TestDocContents)
             .useContainer("section", TestDocSection);
     }
 
