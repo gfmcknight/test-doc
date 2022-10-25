@@ -597,9 +597,13 @@ namespace TestDoc {
         renderAsHTML(depth: number, renderer: TestDocRenderer): void {
             renderer.renderLine(`<html>`);
             renderer.tabIn();
+            renderer.renderLine(`<body>`);
+            renderer.tabIn();
             this.content.forEach(elem => {
                 elem.renderAsHTML(depth, renderer);
             });
+            renderer.tabOut();
+            renderer.renderLine(`</body>`);
             renderer.tabOut();
             renderer.renderLine(`</html>`);
         }
